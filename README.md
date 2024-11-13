@@ -1,7 +1,8 @@
 # Maya_UDIM_texture_preview_generate
 Automates the creation of all texture file previews that belong to the selected group in Maya's Viewport when you use udim for textures.
 
-How to use
+
+###How to use
 
 Place both files in the path below, depending on the operating system.
 Window : C:\Users\admin\Documents\maya\2022\scripts\
