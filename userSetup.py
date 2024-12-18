@@ -13,21 +13,21 @@ def addScriptPath():
 def createCustomShelf():
     shelf_name = 'TextureGenerator'
 
-    # 모든 쉘프 탭 가져오기
+    # Get all shelf tabs
     gShelfTopLevel = mel.eval('$tmp = $gShelfTopLevel')
     
-    # 기존 CustomTools 쉘프가 있다면 완전히 삭제
+    # If you have an existing CustomTools shelf, delete it completely
     if cmds.shelfLayout(shelf_name, exists=True):
-        # 쉘프의 모든 버튼 삭제
+        # Delete all buttons on the shelf
         existing_buttons = cmds.shelfLayout(shelf_name, q=True, childArray=True) or []
         for btn in existing_buttons:
             if cmds.objExists(btn):
                 cmds.deleteUI(btn)
     else:
-        # 쉘프가 없는 경우에만 새로 생성
+        # If there is no shelf, create a new one
         mel.eval('addNewShelfTab "%s"' % shelf_name)
     
-    # 버튼이 이미 존재하는지 확인
+    # Check the button already exists
     shelf_buttons = cmds.shelfLayout(shelf_name, q=True, childArray=True) or []
     button_exists = False
     for btn in shelf_buttons:
@@ -35,7 +35,7 @@ def createCustomShelf():
             button_exists = True
             break
     
-    # 버튼이 없을 때만 새로 생성
+    # Create a new button only when there is no button
     if not button_exists:
         button_command = '''
 import generate_preview_by_grp
@@ -55,5 +55,5 @@ def initializePlugin(*args):
     addScriptPath()
     createCustomShelf()
 
-# Maya UI가 로드된 후 실행되도록 설정
+# Set Maya UI to run after it is loaded
 cmds.evalDeferred(initializePlugin)
