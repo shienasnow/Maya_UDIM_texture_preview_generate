@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 
 import maya.mel as mel
@@ -11,7 +9,7 @@ from shiboken2 import wrapInstance
 
 def get_maya_main_window():
     """
-    Maya 메인 윈도우 포인터 반환
+    Maya Main Window Pointer Returns
     """
     main_window_ptr = omui.MQtUtil.mainWindow()
     return wrapInstance(int(main_window_ptr), QMessageBox)
@@ -19,7 +17,7 @@ def get_maya_main_window():
 
 def show_warning_dialog(message):
     """
-    경고 메시지 다이얼로그 표시
+    Display alert message dialog
     """
     maya_window = get_maya_main_window()
     QMessageBox.warning(maya_window, "경고", message)
@@ -27,61 +25,61 @@ def show_warning_dialog(message):
 
 def set_working_diretory():
     """
-    씬 파일의 디렉토리로 작업 디렉토리를 변경
+    Change the working directory to the directory of the thin file.
     """
     scene_path = cmds.file(query=True, sceneName=True)
 
     if scene_path:
         scene_dir = os.path.dirname(scene_path)
 
-        # 디렉토리가 존재하는지 확인
+        # Verify that the directory exists
         if os.path.isdir(scene_dir):
             os.chdir(scene_dir)
-            print(f"\n작업 디렉토리를 변경했습니다: {scene_dir}")
+            print(f"\nChanged working directory : {scene_dir}")
         else:
-            print(f"\n작업 디렉토리 변경 실패: 디렉토리가 존재하지 않습니다: {scene_dir}")
+            print(f"\nFailed to change working directory. directory does not exist : {scene_dir}")
     else:
-        print("\n씬 파일이 저장되지 않았습니다.")
+        print("\nThe scene file has not been saved.")
 
 
 def get_textures_from_selection():
     """
-    선택된 그룹의 메시들에 연결된 텍스처 노드들을 찾아서 반환
+    Find and return texture nodes associated with meshes in the selected group
     """
-    # 선택된 객체 확인
+    # Check Selected Objects
     selection = cmds.ls(selection=True, long=True)
 
     if not selection:
-        show_warning_dialog("객체가 선택되지 않았습니다.\n하나 이상의 그룹이나 메시를 선택해주세요.")
+        show_warning_dialog("No object selected.\nPlease select at least one group or mesh.")
         return set()
 
-    # 선택된 객체들의 모든 하위 메시 찾기
+    # Find all child meshes of selected objects
     meshes = cmds.listRelatives(selection, allDescendents=True, type="mesh", fullPath=True) or []
 
     if not meshes:
-        show_warning_dialog("선택된 그룹 내에 메시가 없습니다.\n메시가 포함된 그룹을 선택해주세요.")
+        show_warning_dialog("There are no meshes within the selected group.\nPlease select a group that includes mesh.")
         return set()
 
-    # 연결된 텍스처를 저장할 set
+    # set to store linked textures
     connected_textures = set()
 
-    # 각 메시에 대해 처리
+    # Processing for each mesh
     for mesh in meshes:
-        # 메시에 할당된 쉐이딩 그룹(Shading Engine) 찾기
+        # Find the Shading Engine assigned to the mesh
         shading_engines = cmds.listConnections(mesh, type="shadingEngine") or []
         
         for se in shading_engines:
-            # Shading Engine에서 머터리얼 찾기
+            # Finding Materials in Shading Engine
             materials = cmds.listConnections(f"{se}.surfaceShader", source=True, destination=False) or []
             
             for material in materials:
-                # 머터리얼에 연결된 모든 file 노드 찾기
+                # Find all file nodes connected to the material
                 textures = cmds.listConnections(material, type="file") or []
                 connected_textures.update(textures)
     
     
     if not connected_textures:
-        show_warning_dialog("선택된 메시에 연결된 텍스처가 없습니다.")
+        show_warning_dialog("There are no textures associated with the selected mesh.")
         return set()
     
     return connected_textures
@@ -89,42 +87,42 @@ def get_textures_from_selection():
 
 def set_texture_preview_quality(textures):
     """
-    주어진 텍스처들의 프리뷰 퀄리티를 1k로 설정하고 프리뷰 생성
+    Set the preview quality of the given textures to 1k and generate previews
     """
     if not textures:
         return
 
-    print("\n=== 텍스처 프리뷰 설정 ===")
+    print("\n=== Texture Preview Settings ===")
     for texture in textures:
         if texture:
-            # Preview Quality 1k로 설정 및 프리뷰 생성
+            # Set to Preview Quality 1k and Create Preview
             cmds.setAttr(f"{texture}.uvTileProxyQuality", 1)
             print(f"{texture} : uvTileProxyQuality 1k 설정 완료")
     
-            # Generate Preview (MEL 명령어 사용)
+            # Generate Preview (Using MEL Commands)
             mel.eval(f'generateUvTilePreview "{texture}"')
-            print(f"{texture} : 프리뷰 설정 완료")
+            print(f"{texture} : Preview set up")
 
         else:
-            error_msg = f"{texture} : 텍스처 없음"
+            error_msg = f"{texture} : No Texture"
             print(error_msg)
 
-    print("=== 텍스처 프리뷰 설정 완료 ===\n")
+    print("=== Texture preview settings complete ===\n")
 
 
 def update_selected_group_textures():
     """
-    선택된 그룹의 텍스처들에 대해 프리뷰 설정을 업데이트
+    Update preview settings for textures in selected groups
     """
     set_working_diretory()
 
-    # 연결된 텍스처 찾기
+    # Find linked textures
     textures = get_textures_from_selection()
     
     if textures:
-        print(f"\n발견된 텍스처 노드 ({len(textures)}개):")
+        print(f"\nFound Texture Nodes : Total ({len(textures)})")
         for tex in textures:
             print(f"- {tex}")
         
-        # 프리뷰 설정 업데이트
+        # Update preview settings
         set_texture_preview_quality(textures)
